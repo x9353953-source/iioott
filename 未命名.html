@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tavern Gallery Pro Max</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Tavern Gallery">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/googlefonts/noto-emoji/main/png/512/emoji_u1f340.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script><style type="text/tailwindcss">
+        /* Firefox 滚动条 */
+        html { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .dark html { scrollbar-color: #475569 transparent; }
+        
+        /* Webkit 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .hide { display: none !important; }
+        .glass-nav { @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50; }
+        .glass-sidebar { @apply bg-white dark:bg-slate-900 shadow-[4px_0_24px_rgba(0,0,0,0.15)]; }
+        
+        /* Toggle 开关动画 */
+        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
+        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
+
+        .sidebar-drawer { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-closed { transform: translateX(-100%); }
+        
+        /* 卡片选中状态 */
+        .card-selected { border-color: #4f46e5 !important; border-width: 2px !important; transform: scale(0.96); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2); }
+        .card-selectable { cursor: pointer; }
+        .card-selectable:hover { border-color: #818cf8; }
+
+        /* 底部操作栏动画 */
+        .batch-bar { transform: translateX(-50%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s; }
+        .batch-bar-hidden { transform: translate(-50%, 150%); opacity: 0; pointer-events: none; }
+        
+        /* Toast 提示动画 */
+        .toast-enter { animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .toast-leave { animation: toastOut 0.3s ease-in forwards; }
+        @keyframes toastIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes toastOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-20px); opacity: 0; } }
+    </style>
+</head><body class="bg-slate-50 dark:bg-slate-950 min-h-screen font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300 flex flex-col overflow-x-hidden">
+    <header class="glass-nav sticky top-0 z-40">
+        <div class="max-w-[1400px] mx-auto px-4 py-3 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg md:hidden transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <h1 class="text-xl sm:text-2xl font-bold text-indigo-600 dark:text-indigo-400 tracking-tight flex items-center gap-2">
+                        Tavern Gallery
+                    </h1>
+                </div>
+                
+                <div class="flex items-center gap-2 md:hidden">
+                    <button onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-indigo-500 dark:text-slate-400 dark:hover:text-amber-400 transition-colors">
+                        <svg id="themeIconM" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                    </button>
+                    <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        <button onclick="switchTab('cards')" id="tab-cards-m" class="px-3 py-1 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white transition-all">角色卡</button>
+                        <button onclick="switchTab('worldbooks')" id="tab-wb-m" class="px-3 py-1 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 transition-all">世界书</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div class="hidden md:flex items-center gap-3">
+                    <button onclick="toggleTheme()" class="p-2 text-slate-500 hover:text-indigo-500 dark:text-slate-400 dark:hover:text-amber-400 transition-colors">
+                        <svg id="themeIconPC" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                    </button>
+                    <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg mr-2">
+                        <button onclick="switchTab('cards')" id="tab-cards-pc" class="px-4 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white transition-all">角色卡</button>
+                        <button onclick="switchTab('worldbooks')" id="tab-wb-pc" class="px-4 py-1.5 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all">世界书</button>
+                    </div>
+                </div>
+
+                <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="搜索名称、标签或备注..." 
+                    class="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-full focus:ring-2 focus:ring-indigo-500 outline-none flex-1 sm:flex-none sm:w-48 bg-white/50 dark:bg-slate-800/50 dark:text-white transition-all shadow-sm">
+                
+                <button onclick="openUploadModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-all shadow-md active:scale-95 shrink-0">
+                    + 新增记录
+                </button>
+            </div>
+        </div>
+    </header><div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 dark:bg-black/60 z-40 hide backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
+    <aside id="sidebar" class="sidebar-drawer sidebar-closed fixed left-0 top-0 h-full w-72 md:w-80 glass-sidebar shadow-2xl z-50 p-6 overflow-y-auto flex flex-col border-r border-slate-200/50 dark:border-slate-700/50">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                标签分类
+            </h3>
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div id="categoryList" class="flex flex-wrap gap-2 mb-auto pb-6">
+            </div>
+        
+        <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-3">
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-2 font-medium">数据管理 (本地存储)</p>
+            <button onclick="exportData()" class="w-full flex items-center justify-center gap-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                备份全部数据
+            </button>
+            <label class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <input type="file" id="importInput" accept=".json" class="hidden" onchange="importData(event)">      
+                导入备份数据
+            </label>
+        </div>
+    </aside><main class="flex-1 w-full max-w-[1400px] mx-auto px-4 py-6 flex flex-col relative pb-24">
+        <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700 mb-4 flex-wrap gap-2 transition-colors">
+            <div class="flex items-center gap-3 px-2">
+                <button onclick="toggleSidebar()" class="hidden md:flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                    筛选器
+                </button>
+                <span id="cardCount" class="text-sm text-slate-500 dark:text-slate-400 font-medium">共 0 条记录</span>
+            </div>
+            
+            <div class="flex items-center gap-4 pr-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-300">批量模式</span>
+                    <input type="checkbox" id="batchToggle" class="hidden" onchange="toggleBatchMode()">
+                    <div id="batchToggleUI" class="w-10 h-6 bg-slate-300 dark:bg-slate-600 rounded-full p-1 transition-colors duration-300">
+                        <div class="w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300"></div>
+                    </div>
+                </label>
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-600"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-300">分页显示</span>
+                    <div class="relative inline-block w-10 h-6 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="viewToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 dark:border-slate-500 appearance-none cursor-pointer z-10" onclick="toggleViewMode()"/>
+                        <label for="viewToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 dark:bg-slate-600 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-medium text-slate-600 dark:text-slate-300 text-xs">全部显示</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="cardGrid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 mb-6">
+            </div>
+        
+        <div id="emptyState" class="text-center py-24 hide bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700 transition-colors">
+            <div class="text-5xl mb-4 opacity-50">🍃</div>
+            <h3 class="text-slate-500 dark:text-slate-400 font-medium" id="emptyText">这里空空如也，点击右上角添加吧</h3>
+        </div>
+                <div id="paginationCtrl" class="batch-bar batch-bar-hidden fixed bottom-6 left-1/2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md text-slate-700 dark:text-white px-5 py-3 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.3)] z-[35] flex items-center gap-3 border border-slate-200 dark:border-slate-600 whitespace-nowrap transition-all duration-300">
+            <button onclick="changePage(-1)" class="px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 transition-colors font-medium text-sm">上一页</button>
+            <div class="flex items-center gap-2 px-3 border-x border-slate-300 dark:border-slate-600">
+                <span class="text-sm font-medium text-slate-500 dark:text-slate-300">第</span>
+                <input type="number" id="pageInput" min="1" value="1" class="w-12 text-center py-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-500 rounded-md outline-none text-sm text-slate-700 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" onchange="jumpToPage()">
+                <span class="text-sm font-medium text-slate-500 dark:text-slate-400">/ <span id="totalPages">1</span> 页</span>
+            </div>
+            <button onclick="changePage(1)" class="px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 transition-colors font-medium text-sm">下一页</button>
+        </div>
+    </main>
+
+    <div id="batchActionBar" class="batch-bar batch-bar-hidden fixed bottom-6 left-1/2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md text-slate-700 dark:text-white px-5 py-3 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.3)] z-40 flex items-center gap-3 border border-slate-200 dark:border-slate-600 whitespace-nowrap transition-all duration-300">
+        <span class="text-sm font-medium mr-1">已选择 <span id="selectedCount" class="text-indigo-600 dark:text-indigo-400 font-bold text-lg">0</span></span>
+        <div class="w-px h-5 bg-slate-300 dark:bg-slate-600"></div>
+        <button onclick="openDownloadModal('batch')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-full text-sm font-medium transition-colors shadow-sm">批量下载</button>
+        <button onclick="batchDeletePrompt()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded-full text-sm font-medium transition-colors shadow-sm">批量删除</button>
+        <button onclick="toggleBatchMode(true)" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full ml-1 text-slate-500 dark:text-slate-400 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+    <div id="uploadModal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hide opacity-0 transition-all duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 m-4 max-h-[90vh] overflow-y-auto transform scale-95 transition-all duration-300" id="modalContent">
+            <h2 class="text-xl font-bold mb-5 text-slate-800 dark:text-white" id="modalTitle">新增记录</h2>
+            <form id="uploadForm" class="space-y-4">
+                <input type="hidden" id="editItemId" value="">
+                <input type="hidden" id="flagDeleteImage" value="false">
+                <input type="hidden" id="flagDeleteRaw" value="false">
+                <input type="hidden" id="flagDeleteCompanion" value="false">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">封面图片 <span id="imgRequired">(必填)</span></label>
+                    <div id="existingImageUI" class="hidden items-center justify-between bg-slate-100 dark:bg-slate-700 p-2 rounded-lg mb-2">
+                        <span class="text-sm text-slate-600 dark:text-slate-300">已包含图片 (留空则保留原图)</span>
+                        <button type="button" onclick="markDeleteFile('Image')" class="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">删除原图</button>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp" class="block w-full text-sm text-slate-500 dark:text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-900/50 dark:file:text-indigo-300">
+                </div>
+                
+                <div id="rawFileContainer">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">原始数据 (透明 .png / .json 文件)</label>
+                    <div id="existingRawUI" class="hidden items-center justify-between bg-slate-100 dark:bg-slate-700 p-2 rounded-lg mb-2">
+                        <span id="existingRawName" class="text-sm text-slate-600 dark:text-slate-300 truncate mr-2"></span>
+                        <button type="button" onclick="markDeleteFile('Raw')" class="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded shrink-0">删除文件</button>
+                    </div>
+                    <input type="file" id="rawFileInput" accept=".png,.json" class="block w-full text-sm text-slate-500 dark:text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 dark:file:bg-emerald-900/50 dark:file:text-emerald-300">
+                </div>
+
+                <div id="companionFileContainer">
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Companion 附加文件 (可选)</label>
+                    <div id="existingCompanionUI" class="hidden items-center justify-between bg-slate-100 dark:bg-slate-700 p-2 rounded-lg mb-2">
+                        <span id="existingCompanionName" class="text-sm text-slate-600 dark:text-slate-300 truncate mr-2"></span>
+                        <button type="button" onclick="markDeleteFile('Companion')" class="text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded shrink-0">删除文件</button>
+                    </div>
+                    <input type="file" id="companionFileInput" class="block w-full text-sm text-slate-500 dark:text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 dark:file:bg-amber-900/50 dark:file:text-amber-300">
+                </div>
+
+                <div>
+                    <input type="text" id="nameInput" placeholder="名称 (如 角色名 / 世界书名)" required class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors text-sm">
+                </div>
+                <div>
+                    <input type="text" id="tagsInput" placeholder="标签 (英文逗号分隔，如 设定,奇幻)" required class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors text-sm">
+                </div>
+                <div>
+                    <textarea id="noteInput" rows="3" placeholder="备注或简介..." class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-slate-900 dark:text-white transition-colors resize-none text-sm"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" onclick="closeModal('uploadModal', 'modalContent')" class="px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium text-sm">取消</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors font-medium text-sm shadow-md">保存记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="downloadModal" class="fixed inset-0 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] hide opacity-0 transition-all duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm p-6 m-4 transform scale-95 transition-all duration-300" id="downloadModalContent">
+            <h2 class="text-lg font-bold mb-4 text-slate-800 dark:text-white">选择要下载的文件</h2>
+            <input type="hidden" id="dlTargetId" value="">
+            
+            <div class="space-y-3 mb-6" id="downloadOptions">
+                </div>
+            
+            <div class="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                <button type="button" onclick="closeModal('downloadModal', 'downloadModalContent')" class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors font-medium text-sm">取消</button>
+                <button onclick="executeDownload()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors font-medium text-sm shadow-md">确认下载</button>
+            </div>
+        </div>
+    </div>
+    <div id="lightbox" class="fixed inset-0 bg-slate-900/90 dark:bg-black/95 backdrop-blur-xl z-[70] hide flex flex-col items-center justify-center transition-opacity" onclick="closeLightbox()">
+        <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white hover:text-red-400 bg-black/50 hover:bg-black/80 p-2 rounded-full transition-all z-50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <img id="lightboxImg" src="" class="max-w-[95vw] max-h-[90vh] object-contain rounded-lg shadow-2xl transform scale-95 transition-transform duration-300" onclick="event.stopPropagation()">
+    </div>
+
+    <div id="toastContainer" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <script>
+        const dbName = 'TavernGalleryProMax';
+        let db;
+
+        // 全局状态管理
+        let state = {
+            activeTab: 'cards',
+            data: { cards: [], worldbooks: [] }, // 这里现在只存轻量级的元数据，不存大文件
+            currentCategory: 'all',
+            searchQuery: '',
+            itemsPerPage: 9,
+            currentPage: 1,
+            isBatchMode: false,
+            selectedIds: new Set()
+        };
+
+        // 防 XSS 注入：HTML 实体转义
+        const escapeHTML = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        };
+
+        // 全局提示框组件
+        const showToast = (message, type = 'info') => {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800 dark:bg-slate-700';
+            toast.className = `px-4 py-2 rounded-full shadow-lg text-white text-sm font-medium ${bg} toast-enter flex items-center gap-2`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-leave');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+        const initDB = () => new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onerror = () => { showToast('数据库连接失败', 'error'); reject('DB Error'); };
+            request.onsuccess = (e) => { db = e.target.result; resolve(); };
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('worldbooks')) db.createObjectStore('worldbooks', { keyPath: 'id' });
+            };
+        });
+
+        // 重构后的数据库操作对象，支持内存友好的读取和批量事务
+        const dbOps = {
+            // 获取轻量级元数据列表（拦截大文件渲染成 URL，极大节省内存）
+            getAllMeta: (storeName) => new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.openCursor();
+                const results = [];
+
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        const item = cursor.value;
+                        // 剥离庞大的 Base64/Blob，转换成内存友好的 URL 用于展示封面
+                        results.push({
+                            id: item.id,
+                            name: item.name,
+                            tags: item.tags,
+                            note: item.note,
+                            timestamp: item.timestamp,
+                            hasImage: !!item.image,
+                            hasRaw: !!item.rawFile,
+                            hasCompanion: !!item.companionFile,
+                            // 如果是 Base64 字符串就直接用，否则视为无图片
+                            imageUrl: (item.image && typeof item.image === 'string') ? item.image : null
+                        });
+                        cursor.continue();
+                    } else {
+                        // 按时间戳倒序排列
+                        resolve(results.sort((a, b) => b.id - a.id));
+                    }
+                };
+                request.onerror = () => reject('Failed to fetch data');
+            }),
+
+            // 获取单条完整数据（用于编辑或下载时使用）
+            getCompleteItem: (storeName, id) => new Promise((resolve, reject) => {
+                const request = db.transaction(storeName, 'readonly').objectStore(storeName).get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject('Failed to fetch item');
+            }),
+
+            add: (storeName, item) => new Promise(resolve => { 
+                const tx = db.transaction(storeName, 'readwrite'); 
+                tx.objectStore(storeName).put(item); 
+                tx.oncomplete = () => resolve(); 
+            }),
+
+            delete: (storeName, id) => new Promise(resolve => { 
+                const tx = db.transaction(storeName, 'readwrite'); 
+                tx.objectStore(storeName).delete(id); 
+                tx.oncomplete = () => resolve(); 
+            })
+        };
+        function initTheme() {
+            try {
+                const isDark = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) document.documentElement.classList.add('dark');
+            } catch (e) { console.warn('无法访问 localStorage'); }
+            updateThemeIcons();
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            try {
+                if (html.classList.contains('dark')) {
+                    html.classList.remove('dark'); localStorage.setItem('theme', 'light');
+                } else {
+                    html.classList.add('dark'); localStorage.setItem('theme', 'dark');
+                }
+            } catch (e) { html.classList.toggle('dark'); }
+            updateThemeIcons();
+        }
+
+        function updateThemeIcons() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const svg = isDark ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+            document.getElementById('themeIconM').innerHTML = svg;
+            document.getElementById('themeIconPC').innerHTML = svg;
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar'), overlay = document.getElementById('sidebarOverlay');
+            sb.classList.toggle('sidebar-closed'); overlay.classList.toggle('hide');
+        }
+        function switchTab(tab) {
+            state.activeTab = tab; state.currentCategory = 'all'; state.currentPage = 1; state.isBatchMode = false; state.selectedIds.clear();
+            
+            document.getElementById('tab-cards-pc').className = tab === 'cards' ? 'px-4 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white transition-all' : 'px-4 py-1.5 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all';
+            document.getElementById('tab-wb-pc').className = tab === 'worldbooks' ? 'px-4 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white transition-all' : 'px-4 py-1.5 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all';
+            document.getElementById('tab-cards-m').className = tab === 'cards' ? 'px-3 py-1 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white' : 'px-3 py-1 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400';
+            document.getElementById('tab-wb-m').className = tab === 'worldbooks' ? 'px-3 py-1 text-sm font-medium rounded-md bg-white dark:bg-slate-600 shadow-sm text-indigo-600 dark:text-white' : 'px-3 py-1 text-sm font-medium rounded-md text-slate-500 dark:text-slate-400';
+            
+            document.getElementById('batchToggle').checked = false;
+            toggleBatchMode(true); 
+            updateView();
+        }
+
+        function toggleBatchMode(forceClose = false) {
+            if (forceClose) state.isBatchMode = false;
+            else state.isBatchMode = !state.isBatchMode;
+            
+            state.selectedIds.clear();
+            const toggleUI = document.getElementById('batchToggleUI'), actionBar = document.getElementById('batchActionBar');
+            const paginationEl = document.getElementById('paginationCtrl');
+            
+            if (state.isBatchMode) {
+                toggleUI.classList.remove('bg-slate-300', 'dark:bg-slate-600'); toggleUI.classList.add('bg-indigo-500');
+                toggleUI.firstElementChild.style.transform = 'translateX(100%)';
+                actionBar.classList.remove('batch-bar-hidden');
+                paginationEl.classList.add('bottom-24');
+                paginationEl.classList.remove('bottom-6');
+            } else {
+                toggleUI.classList.add('bg-slate-300', 'dark:bg-slate-600'); toggleUI.classList.remove('bg-indigo-500');
+                toggleUI.firstElementChild.style.transform = 'translateX(0)';
+                actionBar.classList.add('batch-bar-hidden');
+                paginationEl.classList.remove('bottom-24');
+                paginationEl.classList.add('bottom-6');
+            }
+            updateView();
+        }
+
+        function updateView() {
+            const currentData = state.data[state.activeTab] || [];
+            const allTags = new Set();
+            
+            currentData.forEach(item => {
+                if(item.tags && Array.isArray(item.tags)) item.tags.forEach(t => allTags.add(t));
+            });
+            const listEl = document.getElementById('categoryList');
+            
+            let html = `<button onclick="setCategory('all')" class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${state.currentCategory === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}">全部</button>`;
+            Array.from(allTags).sort().forEach(tag => {
+                const isActive = state.currentCategory === tag;
+                const safeTag = escapeHTML(tag);
+                html += `<button onclick="setCategory('${safeTag}')" class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${isActive ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}">${safeTag}</button>`;
+            });
+            listEl.innerHTML = html;
+
+            let filtered = currentData;
+            if (state.currentCategory !== 'all') filtered = filtered.filter(c => c.tags && c.tags.includes(state.currentCategory));
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(q)) || (c.tags && c.tags.join(' ').toLowerCase().includes(q)) || (c.note && c.note.toLowerCase().includes(q)));
+            }
+            document.getElementById('cardCount').textContent = `共 ${filtered.length} 条记录`;
+
+            const isShowAll = state.itemsPerPage === Infinity;
+            const totalPages = isShowAll ? 1 : Math.ceil(filtered.length / state.itemsPerPage) || 1;
+            
+            if (state.currentPage > totalPages) state.currentPage = totalPages;
+            if (state.currentPage < 1) state.currentPage = 1;
+            
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('pageInput').value = state.currentPage;
+            
+            const paginationEl = document.getElementById('paginationCtrl');
+            if (isShowAll || filtered.length <= state.itemsPerPage) {
+                paginationEl.classList.add('batch-bar-hidden');
+            } else {
+                paginationEl.classList.remove('batch-bar-hidden');
+            }
+
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            renderItems(isShowAll ? filtered : filtered.slice(startIndex, startIndex + state.itemsPerPage));
+        }
+
+        function setCategory(tag) { state.currentCategory = tag; state.currentPage = 1; updateView(); }
+        function toggleViewMode() { state.itemsPerPage = document.getElementById('viewToggle').checked ? Infinity : 9; state.currentPage = 1; updateView(); }
+        
+        function changePage(delta) { 
+            const isShowAll = state.itemsPerPage === Infinity;
+            if (isShowAll) return;
+            const currentData = state.data[state.activeTab] || [];
+            let filtered = currentData;
+            if (state.currentCategory !== 'all') filtered = filtered.filter(c => c.tags && c.tags.includes(state.currentCategory));
+            if (state.searchQuery) {
+                const q = state.searchQuery.toLowerCase();
+                filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(q)) || (c.tags && c.tags.join(' ').toLowerCase().includes(q)) || (c.note && c.note.toLowerCase().includes(q)));
+            }
+            const totalPages = Math.ceil(filtered.length / state.itemsPerPage) || 1;
+            
+            const newPage = state.currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                state.currentPage = newPage; 
+                updateView(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+        
+        function jumpToPage() { const val = parseInt(document.getElementById('pageInput').value); if (!isNaN(val)) { state.currentPage = val; updateView(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+        function handleSearch(query) { state.searchQuery = query.trim(); state.currentPage = 1; updateView(); }
+        function toggleSelection(id) {
+            if (!state.isBatchMode) return;
+            if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+            else state.selectedIds.add(id);
+            document.getElementById('selectedCount').textContent = state.selectedIds.size;
+            updateView();
+        }
+        function renderItems(items) {
+            const grid = document.getElementById('cardGrid'); 
+            grid.innerHTML = '';
+            
+            if (state.activeTab === 'worldbooks') {
+                grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6';
+            } else {
+                grid.className = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 mb-6';
+            }
+            
+            if (items.length === 0) {
+                document.getElementById('emptyState').classList.remove('hide');
+                document.getElementById('emptyText').textContent = state.activeTab === 'cards' ? '卡片库为空，请添加' : '世界书库为空，请添加';
+                return;
+            }
+            document.getElementById('emptyState').classList.add('hide');
+            
+            items.forEach(item => {
+                const isSelected = state.selectedIds.has(item.id);
+                const safeName = escapeHTML(item.name || '未命名');
+                const safeNote = escapeHTML(item.note) || '暂无备注';
+                const tagsArray = Array.isArray(item.tags) ? item.tags : [];
+                
+                const tagsHtml = tagsArray.map(tag => {
+                    const safeTag = escapeHTML(tag);
+                    return `<span onclick="event.stopPropagation(); if(!state.isBatchMode) setCategory('${safeTag}')" class="bg-slate-100 dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded text-[10px] font-medium ${state.isBatchMode ? '' : 'cursor-pointer hover:bg-indigo-100 dark:hover:bg-slate-600'}">${safeTag}</span>`;
+                }).join('');
+                const fileBadge = item.hasRaw ? `<div class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">Raw File</div>` : '';
+                const compBadge = item.hasCompanion ? `<div class="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">Companion</div>` : '';
+                
+                const el = document.createElement('div');
+                el.onclick = () => toggleSelection(item.id);
+
+                if (state.activeTab === 'worldbooks') {
+                    el.className = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 group flex items-start gap-4 p-4 ${state.isBatchMode ? 'card-selectable' : 'hover:shadow-md'} ${isSelected ? 'card-selected' : 'border border-slate-200/60 dark:border-slate-700'}`;
+                    const imgLogic = item.imageUrl ? `<img src="${item.imageUrl}" class="w-full h-full object-cover">` : `<span class="text-2xl opacity-50">📖</span>`;
+                    const clickImageLogic = (item.imageUrl && !state.isBatchMode) ? `onclick="event.stopPropagation(); openLightbox('${item.imageUrl}');" class="cursor-zoom-in"` : '';
+                    
+                    el.innerHTML = `
+                        <div class="w-20 h-20 rounded-xl shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center relative" ${clickImageLogic}>
+                            ${imgLogic}
+                            ${isSelected ? '<div class="absolute inset-0 bg-indigo-600/30 flex items-center justify-center"><div class="bg-indigo-600 text-white rounded-full p-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div></div>' : ''}
+                        </div>
+                        <div class="flex flex-col flex-grow min-w-0">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 text-base mb-1 truncate">${safeName}</h3>
+                            <div class="flex flex-wrap gap-1 mb-1.5">${tagsHtml}</div>
+                            <div class="flex gap-1.5 mb-2">${fileBadge}${compBadge}</div>
+                            <div class="flex justify-between items-center mt-auto ${state.isBatchMode ? 'opacity-50 pointer-events-none' : ''}">
+                                <div class="flex gap-1 -ml-2">
+                                    <button onclick="event.stopPropagation(); openDownloadModal('${item.id}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-700 px-2 py-1 rounded text-xs font-semibold transition-colors">下载</button>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="event.stopPropagation(); editItem('${item.id}')" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded text-xs font-semibold transition-colors">编辑</button>
+                                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 px-2 py-1 -mr-2 rounded text-xs font-semibold transition-colors">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    el.className = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 group flex flex-col ${state.isBatchMode ? 'card-selectable' : 'hover:shadow-lg'} ${isSelected ? 'card-selected' : 'border border-slate-200/60 dark:border-slate-700'}`;
+                    const fileBadgeTop = item.hasRaw ? `<div class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg> Raw</div>` : '';
+                    const compBadgeTop = item.hasCompanion ? `<div class="absolute top-2 left-2 bg-amber-500/80 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">Comp</div>` : '';
+                    const imageHtml = item.imageUrl ? `<img src="${item.imageUrl}" loading="lazy" class="w-full h-full object-cover object-top ${state.isBatchMode ? '' : 'group-hover:scale-105'} transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center bg-slate-200/50 dark:bg-slate-700/50 text-5xl">🖼️</div>`;
+                    const clickImageLogic = (item.imageUrl && !state.isBatchMode) ? `onclick="event.stopPropagation(); openLightbox('${item.imageUrl}');"` : '';
+                    const cursorLogic = (item.imageUrl && !state.isBatchMode) ? 'cursor-zoom-in' : '';
+
+                    el.innerHTML = `
+                        <div class="relative w-full aspect-[2/3] overflow-hidden bg-slate-100 dark:bg-slate-900 ${cursorLogic}" ${clickImageLogic}>
+                            ${imageHtml}${fileBadgeTop}${compBadgeTop}
+                            ${isSelected ? '<div class="absolute inset-0 bg-indigo-600/30 flex items-center justify-center"><div class="bg-indigo-600 text-white rounded-full p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div></div>' : ''}
+                        </div>
+                        <div class="p-3.5 flex flex-col flex-grow">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-200 text-base mb-1.5 line-clamp-1">${safeName}</h3>
+                            <div class="flex flex-wrap gap-1 mb-2">${tagsHtml}</div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 flex-grow mb-3 leading-relaxed">${safeNote}</p>
+                            <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700 ${state.isBatchMode ? 'opacity-50 pointer-events-none' : ''}">
+                                <div class="flex gap-1 -ml-2">
+                                    <button onclick="event.stopPropagation(); openDownloadModal('${item.id}')" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-slate-700 px-2 py-1 rounded text-xs font-semibold transition-colors">下载</button>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button onclick="event.stopPropagation(); editItem('${item.id}')" class="text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded text-xs font-semibold transition-colors">编辑</button>
+                                    <button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-700 px-2 py-1 -mr-2 rounded text-xs font-semibold transition-colors">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                grid.appendChild(el);
+            });
+        }
+function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightbox').classList.remove('hide'); setTimeout(()=>document.getElementById('lightboxImg').classList.remove('scale-95'), 10); }
+        function closeLightbox() { document.getElementById('lightboxImg').classList.add('scale-95'); setTimeout(()=>document.getElementById('lightbox').classList.add('hide'), 300); }
+        
+        function closeModal(modalId, contentId) { 
+            toggleModal(modalId, contentId, true); 
+            if(modalId === 'uploadModal') setTimeout(()=>document.getElementById('uploadForm').reset(), 300); 
+        }
+        
+        function toggleModal(modalId, contentId, forceClose=false) {
+            const m = document.getElementById(modalId), c = document.getElementById(contentId);
+            if (forceClose || !m.classList.contains('hide')) { 
+                m.classList.add('opacity-0'); c.classList.add('scale-95'); 
+                setTimeout(() => m.classList.add('hide'), 300); 
+            } else { 
+                m.classList.remove('hide'); void m.offsetWidth; 
+                m.classList.remove('opacity-0'); c.classList.remove('scale-95'); 
+            }
+        }
+
+        function markDeleteFile(type) {
+            document.getElementById(`flagDelete${type}`).value = 'true';
+            document.getElementById(`existing${type}UI`).classList.add('hidden');
+            if (type === 'Image' && state.activeTab === 'cards') {
+                document.getElementById('imageInput').required = true;
+                document.getElementById('imgRequired').textContent = '(必填)';
+            }
+        }
+
+        const fileToBase64 = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+
+        function openUploadModal() {
+            document.getElementById('uploadForm').reset();
+            document.getElementById('editItemId').value = '';
+            document.getElementById('modalTitle').textContent = state.activeTab === 'cards' ? '新增角色卡' : '新增世界书';
+            
+            ['Image', 'Raw', 'Companion'].forEach(type => {
+                document.getElementById(`flagDelete${type}`).value = 'false';
+                document.getElementById(`existing${type}UI`).classList.add('hidden');
+                document.getElementById(`existing${type}UI`).classList.remove('flex');
+            });
+            
+            document.getElementById('imageInput').required = state.activeTab === 'cards';
+            document.getElementById('imgRequired').textContent = state.activeTab === 'cards' ? '(必填)' : '(可选)';
+            
+            toggleModal('uploadModal', 'modalContent');
+        }
+
+        // 异步获取完整数据进行编辑
+        async function editItem(id) {
+            // 注意这里：从数据库中提取完整文件用于编辑状态判定
+            const item = await dbOps.getCompleteItem(state.activeTab, Number(id));
+            if (!item) return;
+            
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('nameInput').value = item.name;
+            document.getElementById('tagsInput').value = item.tags ? item.tags.join(', ') : '';
+            document.getElementById('noteInput').value = item.note || '';
+            document.getElementById('modalTitle').textContent = '编辑记录';
+            
+            ['Image', 'Raw', 'Companion'].forEach(type => {
+                document.getElementById(`flagDelete${type}`).value = 'false';
+                document.getElementById(`existing${type}UI`).classList.add('hidden');
+                document.getElementById(`existing${type}UI`).classList.remove('flex');
+            });
+            
+            if (item.image) {
+                document.getElementById('existingImageUI').classList.remove('hidden');
+                document.getElementById('existingImageUI').classList.add('flex');
+                document.getElementById('imageInput').required = false;
+            } else {
+                document.getElementById('imageInput').required = state.activeTab === 'cards';
+            }
+            
+            if (item.rawFile) {
+                document.getElementById('existingRawUI').classList.remove('hidden');
+                document.getElementById('existingRawUI').classList.add('flex');
+                document.getElementById('existingRawName').textContent = escapeHTML(item.rawFileName) || '已包含文件';
+            }
+            
+            if (item.companionFile) {
+                document.getElementById('existingCompanionUI').classList.remove('hidden');
+                document.getElementById('existingCompanionUI').classList.add('flex');
+                document.getElementById('existingCompanionName').textContent = escapeHTML(item.companionFileName) || '已包含文件';
+            }
+            
+            toggleModal('uploadModal', 'modalContent');
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editItemId').value;
+            const name = document.getElementById('nameInput').value.trim();
+            const tags = document.getElementById('tagsInput').value.split(',').map(t => t.trim()).filter(t => t);
+            const note = document.getElementById('noteInput').value.trim();
+            
+            const imageFile = document.getElementById('imageInput').files[0];
+            const rawFile = document.getElementById('rawFileInput').files[0];
+            const compFile = document.getElementById('companionFileInput').files[0];
+            
+            const isEdit = !!id;
+            let existingItem = null;
+            if (isEdit) {
+                // 修复 bug：用 Number 保证原封不动读取 ID（防止浮点数被解析成整数）
+                existingItem = await dbOps.getCompleteItem(state.activeTab, Number(id));
+            }
+            
+            let imageData = existingItem ? existingItem.image : null;
+            if (imageFile) imageData = await fileToBase64(imageFile);
+            else if (document.getElementById('flagDeleteImage').value === 'true') imageData = null;
+            
+            let rawData = existingItem ? existingItem.rawFile : null;
+            let rawName = existingItem ? existingItem.rawFileName : null;
+            if (rawFile) {
+                rawData = await fileToBase64(rawFile);
+                rawName = rawFile.name;
+            } else if (document.getElementById('flagDeleteRaw').value === 'true') {
+                rawData = null;
+                rawName = null;
+            }
+            
+            let compData = existingItem ? existingItem.companionFile : null;
+            let compName = existingItem ? existingItem.companionFileName : null;
+            if (compFile) {
+                compData = await fileToBase64(compFile);
+                compName = compFile.name;
+            } else if (document.getElementById('flagDeleteCompanion').value === 'true') {
+                compData = null;
+                compName = null;
+            }
+            
+            const newItem = {
+                // 彻底修复：使用 Number 防止导入数据的特殊 ID 被截断
+                id: isEdit ? Number(id) : Date.now(),
+                name,
+                tags,
+                note,
+                image: imageData,
+                rawFile: rawData,
+                rawFileName: rawName,
+                companionFile: compData,
+                companionFileName: compName,
+                timestamp: isEdit && existingItem ? existingItem.timestamp : Date.now()
+            };
+            
+            await dbOps.add(state.activeTab, newItem);
+            // 保存后重新读取轻量级元数据
+            state.data[state.activeTab] = await dbOps.getAllMeta(state.activeTab);
+            
+            closeModal('uploadModal', 'modalContent');
+            updateView();
+            showToast(isEdit ? '记录已更新' : '已添加新记录', 'success');
+        });        async function openDownloadModal(target) {
+            document.getElementById('dlTargetId').value = target;
+            const container = document.getElementById('downloadOptions');
+            container.innerHTML = '';
+            
+            let hasImage = false, hasRaw = false, hasComp = false;
+
+            if (target === 'batch') {
+                const ids = Array.from(state.selectedIds);
+                // 即使是批量也先从轻量 metadata 中判断文件存在性
+                ids.forEach(id => {
+                    const item = state.data[state.activeTab].find(i => i.id == id);
+                    if (item) {
+                        if (item.hasImage) hasImage = true;
+                        if (item.hasRaw) hasRaw = true;
+                        if (item.hasCompanion) hasComp = true;
+                    }
+                });
+            } else {
+                const item = state.data[state.activeTab].find(i => i.id == target);
+                if (item) {
+                    if (item.hasImage) hasImage = true;
+                    if (item.hasRaw) hasRaw = true;
+                    if (item.hasCompanion) hasComp = true;
+                }
+            }
+
+            if(hasImage) container.innerHTML += `<label class="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl border border-slate-100 dark:border-slate-600 transition-colors"><input type="checkbox" id="cbDlImage" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 bg-white" checked><span class="text-slate-700 dark:text-slate-300 text-sm font-medium">封面 / 角色图 (Cover)</span></label>`;
+            if(hasRaw) container.innerHTML += `<label class="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl border border-slate-100 dark:border-slate-600 transition-colors"><input type="checkbox" id="cbDlRaw" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 bg-white" checked><span class="text-slate-700 dark:text-slate-300 text-sm font-medium">源文件 (Raw File)</span></label>`;
+            if(hasComp) container.innerHTML += `<label class="flex items-center gap-3 cursor-pointer p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl border border-slate-100 dark:border-slate-600 transition-colors"><input type="checkbox" id="cbDlCompanion" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 bg-white" checked><span class="text-slate-700 dark:text-slate-300 text-sm font-medium">附加文件 (Companion)</span></label>`;
+
+            if(!hasImage && !hasRaw && !hasComp) {
+                container.innerHTML = '<div class="text-center py-4 text-slate-500 dark:text-slate-400 text-sm">该记录未包含任何可下载文件</div>';
+            }
+
+            toggleModal('downloadModal', 'downloadModalContent');
+        }
+
+        function triggerDownload(url, filename) {
+            const a = document.createElement('a'); a.href = url; a.download = filename; 
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        // 延长了延迟等待时间，留出浏览器安全策略处理的时间
+        const delayWait = (ms) => new Promise(res => setTimeout(res, ms));
+
+        async function executeDownload() {
+            const target = document.getElementById('dlTargetId').value;
+            const cbImg = document.getElementById('cbDlImage');
+            const cbRaw = document.getElementById('cbDlRaw');
+            const cbComp = document.getElementById('cbDlCompanion');
+            
+            const dlImage = cbImg ? cbImg.checked : false;
+            const dlRaw = cbRaw ? cbRaw.checked : false;
+            const dlComp = cbComp ? cbComp.checked : false;
+
+            if(!dlImage && !dlRaw && !dlComp) {
+                closeModal('downloadModal', 'downloadModalContent');
+                return showToast('请至少选择一项进行下载', 'error');
+            }
+
+            closeModal('downloadModal', 'downloadModalContent');
+
+            if (target === 'batch') {
+                showToast(`开始排队下载，由于浏览器安全限制，请耐心等待...`, 'info');
+                const ids = Array.from(state.selectedIds);
+                
+                for (let id of ids) {
+                    // 需要拉取包含文件的完整数据来执行下载
+                    const item = await dbOps.getCompleteItem(state.activeTab, id);
+                    if (!item) continue;
+                    
+                    if (dlImage && item.image) { 
+                        triggerDownload(item.image, `${item.name}_Cover.png`); 
+                        await delayWait(1200); 
+                    }
+                    if (dlRaw && item.rawFile) { 
+                        triggerDownload(item.rawFile, item.rawFileName || `${item.name}_RawFile`); 
+                        await delayWait(1200); 
+                    }
+                    if (dlComp && item.companionFile) { 
+                        triggerDownload(item.companionFile, item.companionFileName || `${item.name}_Companion`); 
+                        await delayWait(1200); 
+                    }
+                }
+                
+                showToast(`所选文件批量下载请求发送完毕`, 'success');
+                setTimeout(() => toggleBatchMode(true), 1000);
+            } else {
+                const item = await dbOps.getCompleteItem(state.activeTab, Number(target));
+                if (!item) return;
+                
+                if (dlImage && item.image) { triggerDownload(item.image, `${item.name}_Cover.png`); await delayWait(800); }
+                if (dlRaw && item.rawFile) { triggerDownload(item.rawFile, item.rawFileName || `${item.name}_RawFile`); await delayWait(800); }
+                if (dlComp && item.companionFile) { triggerDownload(item.companionFile, item.companionFileName || `${item.name}_Companion`); }
+                
+                showToast('已请求下载', 'success');
+            }
+        }
+        async function deleteItem(id) { 
+            if (confirm('确定要删除这条记录吗？数据不可恢复。')) { 
+                await dbOps.delete(state.activeTab, Number(id)); 
+                state.data[state.activeTab] = await dbOps.getAllMeta(state.activeTab); 
+                updateView(); 
+                showToast('已删除', 'success'); 
+            } 
+        }
+        
+        function batchDeletePrompt() { 
+            if(state.selectedIds.size === 0) return showToast('未选择任何项目', 'error'); 
+            if(confirm(`确定要永久删除这 ${state.selectedIds.size} 项数据吗？`)) batchDelete(); 
+        }
+        
+        async function batchDelete() { 
+            for (let id of state.selectedIds) { await dbOps.delete(state.activeTab, id); } 
+            state.data[state.activeTab] = await dbOps.getAllMeta(state.activeTab); 
+            toggleBatchMode(true); 
+            updateView(); 
+            showToast('批量删除完成', 'success'); 
+        }
+
+        async function exportData() { 
+            showToast('准备打包数据，这可能需要一点时间...', 'info');
+            try { 
+                // 导出需要全量数据（使用最原始的 getAll）
+                const getRawAll = (store) => new Promise(res => { const req = db.transaction(store, 'readonly').objectStore(store).getAll(); req.onsuccess = () => res(req.result); });
+                const cards = await getRawAll('cards'); 
+                const worldbooks = await getRawAll('worldbooks'); 
+                const dataStr = JSON.stringify({ cards, worldbooks }); 
+                const blob = new Blob([dataStr], { type: 'application/json' }); 
+                const a = document.createElement('a'); 
+                a.href = URL.createObjectURL(blob); 
+                document.body.appendChild(a); 
+                a.download = `TavernData_Backup_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`; 
+                a.click(); 
+                document.body.removeChild(a); 
+                showToast('备份导出成功', 'success'); 
+            } catch(e) { 
+                showToast('数据过大导出失败，建议分批处理', 'error'); 
+            } 
+        }
+        
+        function importData(e) { 
+            const file = e.target.files[0]; 
+            if(!file) return; 
+            if(!confirm('导入将会追加数据，如遇相同 ID 的旧数据可能会被覆盖。确定继续吗？')) {
+                e.target.value = '';
+                return;
+            }
+            showToast('正在读取和导入数据...', 'info');
+            const reader = new FileReader(); 
+            reader.onload = async (ev) => { 
+                try { 
+                    const data = JSON.parse(ev.target.result); 
+                    
+                    const validateItem = (item) => {
+                        return {
+                            ...item,
+                            id: item.id || Date.now() + Math.random(),
+                            name: item.name || '导入的未命名项目',
+                            tags: Array.isArray(item.tags) ? item.tags : []
+                        };
+                    };
+
+                    // 优化：使用同一事务批量导入
+                    const tx = db.transaction(['cards', 'worldbooks'], 'readwrite');
+                    
+                    if(data.cards && Array.isArray(data.cards)) {
+                        const store = tx.objectStore('cards');
+                        data.cards.forEach(c => store.put(validateItem(c)));
+                    }
+                    if(data.worldbooks && Array.isArray(data.worldbooks)) {
+                        const store = tx.objectStore('worldbooks');
+                        data.worldbooks.forEach(w => store.put(validateItem(w)));
+                    }
+                    
+                    tx.oncomplete = async () => {
+                        state.data.cards = await dbOps.getAllMeta('cards'); 
+                        state.data.worldbooks = await dbOps.getAllMeta('worldbooks'); 
+                        updateView(); 
+                        showToast('数据恢复成功', 'success'); 
+                    };
+                    tx.onerror = () => { throw new Error("Transaction Failed") };
+                    
+                } catch(err) { 
+                    console.error(err);
+                    showToast('文件格式不正确或导入失败', 'error'); 
+                } finally {
+                    e.target.value = '';
+                }
+            }; 
+            reader.readAsText(file); 
+        }
+
+        window.onload = async () => {
+            initTheme();
+            try {
+                await initDB();
+                // 启动时仅加载轻量级元数据
+                state.data.cards = await dbOps.getAllMeta('cards');
+                state.data.worldbooks = await dbOps.getAllMeta('worldbooks');
+                updateView();
+                // 移除原有的 success toast，保持界面清爽
+            } catch (e) { 
+                console.error(e); 
+            }
+        };
+    </script>
+</html>
